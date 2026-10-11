@@ -154,13 +154,16 @@ async function send(text) {
 }
 function approvalCard(ev, body) {
   const d = document.createElement('div'); d.className = 'approval'; d.dataset.aid = ev.id;
-  d.innerHTML = `<div class="label">Approval required</div><pre>${esc(ev.message)}</pre><div class="row"><button class="btn" data-y>Approve <kbd>Y</kbd></button><button class="btn ghost" data-n>Deny <kbd>N</kbd></button></div>`;
+  d.innerHTML = `<div class="label">Approval required <span class="muted small">· press Y to approve, N or Esc to deny</span></div><pre>${esc(ev.message)}</pre><div class="row"><button class="btn" data-y>Approve <kbd>Y</kbd></button><button class="btn ghost" data-n>Deny <kbd>N</kbd></button></div>`;
   const answer = ok => api('/api/approve', { method: 'POST', body: { id: ev.id, approved: ok } }).catch(() => { });
-  $('[data-y]', d).onclick = () => answer(true); $('[data-n]', d).onclick = () => answer(false); body.append(d); stick();
+  $('[data-y]', d).onclick = () => answer(true); $('[data-n]', d).onclick = () => answer(false); body.append(d); input.blur(); stick();
 }
 document.addEventListener('keydown', e => {
-  const a = $('.approval:not(.done)');
-  if (a && document.activeElement !== input && /^[yn]$/i.test(e.key) && !e.ctrlKey && !e.metaKey) { $(e.key.toLowerCase() === 'y' ? '[data-y]' : '[data-n]', a).click(); e.preventDefault() }
+  const a = $('.approval:not(.done)'); if (!a || e.ctrlKey || e.metaKey || e.altKey) return;
+  const typing = document.activeElement === input && input.value.trim() !== '';   // an empty box never steals the keypress; a half-typed message does
+  if (typing) return;
+  const k = e.key.toLowerCase(), yes = k === 'y', no = k === 'n' || k === 'escape';
+  if (yes || no) { $(yes ? '[data-y]' : '[data-n]', a).click(); e.preventDefault() }
 });
 msgs.addEventListener('click', e => {
   const c = e.target.closest('.cite'); if (c) { showView('index'); openPeek(c.dataset.path, +c.dataset.line); return }

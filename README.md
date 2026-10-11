@@ -12,7 +12,7 @@ The browser UI follows the [ryoku.dev](https://ryoku.dev) look (bone on ink, dit
 kage-web            # opens http://127.0.0.1:3600/  and shows the FOLDER SELECTOR
 ```
 
-No path typing anywhere. The selector offers Resume, Recent, common places and detected git projects, with breadcrumbs, filter, hidden-folder toggle, and the system file dialog (zenity/kdialog/yad) if you have one. `Ctrl+O` re-opens it any time. In the terminal, `kage` shows an `fzf` picker (or a numbered menu). Pass `-w DIR` only if you want to skip it.
+No path typing anywhere. The selector offers Resume, Recent, common places and detected git projects, with breadcrumbs, filter, hidden-folder toggle, and the system file dialog (zenity/kdialog/yad) if you have one. `Ctrl+O` re-opens it any time. Approval cards answer to a single keypress: **Y** approves, **N** or **Esc** denies (the terminal agent works the same, no Enter needed). In the terminal, `kage` shows an `fzf` picker (or a numbered menu). Pass `-w DIR` only if you want to skip it.
 
 Run without installing: `./kage.sh` (terminal) or `./start-web.sh` (browser). If Rashin owns port 3600, stop it first (`ss -ltnp 'sport = :3600'`) or use `kage web --port 3601`.
 

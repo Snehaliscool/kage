@@ -70,6 +70,22 @@ def run(argv, *, cwd=None, timeout=30):
     except subprocess.TimeoutExpired: raise AgentError(f"Command timed out after {timeout}s: {' '.join(argv)}")
     return f"Exit code: {p.returncode}\n{(p.stdout or '(no output)').strip()}"[:MAX_RESULT]
 
+def _ask_key(prompt: str) -> bool:
+    """Approve with a single keypress (y = yes; n, Enter, Esc or Ctrl+C = no). Falls back to a line prompt when stdin is not a terminal."""
+    import sys
+    if not sys.stdin.isatty():
+        try: return input(prompt).strip().lower() in {'y', 'yes'}
+        except (EOFError, KeyboardInterrupt): return False
+    import termios, tty
+    fd = sys.stdin.fileno(); old = termios.tcgetattr(fd); sys.stdout.write(prompt); sys.stdout.flush()
+    try:
+        tty.setcbreak(fd)
+        while True:
+            ch = sys.stdin.read(1).lower()
+            if ch in ('y', 'n', '\r', '\n', '\x1b', '\x03', ''):
+                yes = ch == 'y'; sys.stdout.write('yes\n' if yes else 'no\n'); sys.stdout.flush(); return yes
+    finally: termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
 class MsgStreamer:
     """Pulls the human-readable "message" out of a streaming JSON object as it arrives."""
     def __init__(self): self.buf = ''; self.pos = 0; self.active = False; self.finished = False; self.final = False
@@ -173,8 +189,7 @@ class Agent(GitMixin):
         elif trustable and self.trust:
             self._emit({'t': 'status', 'm': 'auto-approved (trust on): ' + message.splitlines()[0][:100]}); return True
         if self.confirm_handler is not None: return bool(self.confirm_handler(message))
-        try: return input(f'\n[APPROVAL REQUIRED] {message}\nProceed? [y/N] ').strip().lower() in {'y', 'yes'}
-        except (EOFError, KeyboardInterrupt): return False
+        return _ask_key(f'\n[APPROVAL REQUIRED] {message}\nProceed? [y/N] ')
 
     def path(self, value):
         if not self.workspace: raise AgentError('No workspace selected.')
