@@ -1,0 +1,13 @@
+# LocalPilot's private, localhost-only SearXNG instance.
+use_default_settings: true
+
+server:
+  secret_key: "change-me-via-SEARXNG_SECRET"
+  limiter: false
+  image_proxy: true
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
