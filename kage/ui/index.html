@@ -3,12 +3,13 @@
 <title>Kage 影</title><link rel="icon" href="/static/favicon.svg"><link rel="stylesheet" href="/static/style.css"></head>
 <body>
 <header class="top">
-  <a class="brand" href="/"><span class="mark">影</span><span class="wordmark">KAGE</span></a>
+  <a class="brand" href="/"><span class="mark">影</span><span class="wordmark">KAGE</span><span class="ver" id="ver">v1.4</span></a>
   <nav class="tabs" id="tabs">
-    <button data-view="console" class="on">Console</button><button data-view="index">Index</button><button data-view="vault">Vault</button>
+    <button data-view="console" class="on"><i>01</i>Console</button><button data-view="index"><i>02</i>Index</button><button data-view="vault"><i>03</i>Vault</button><button data-view="terminal"><i>04</i>Terminal</button><button data-view="activity"><i>05</i>Activity</button>
   </nav>
   <div class="right">
-    <button class="ws-pill" id="wsPill" title="Change workspace (Ctrl+O)"><span class="ico">▣</span><span id="wsName">choose folder</span></button>
+    <button class="ws-pill" id="wsPill" title="Change workspace (Ctrl+O)" aria-label="Change workspace"><span class="ico">▣</span><span id="wsName">choose folder</span></button>
+    <button class="auto" id="autoBtn" title="Auto-approve: run actions without asking (HIGH RISK and folder access still ask)"><span>Auto-approve</span><i></i><b>OFF</b></button>
     <select id="modelSel" title="Model"></select>
     <span class="dots" id="dots"></span>
   </div>
@@ -20,11 +21,12 @@
     <div class="hero" id="hero">
       <div class="art"><canvas id="art" width="360" height="200"></canvas><div class="kanji-wm">影</div></div>
       <div class="hero-copy">
-        <div class="eyebrow"><span>影</span> System dossier</div>
+        <div class="eyebrow"><span>影</span> 00 // System dossier</div>
         <h1>Kage</h1>
         <p class="jp">影のように、あなたのマシンで</p>
         <p class="lede">A local agent that lives in your folder. It reads code from a cited index, remembers what matters, and acts on your machine, only after you approve.</p>
         <dl class="spec" id="spec"></dl>
+        <div class="vitals" id="vitals" aria-label="Index and skill stats"></div>
         <div class="chips" id="chips"></div>
       </div>
     </div>
@@ -33,8 +35,8 @@
   <div class="composer">
     <div id="slashMenu" class="slash"></div>
     <div class="entry"><textarea id="input" rows="1" placeholder="Ask Kage, or type / for instant commands"></textarea>
-      <button id="send" class="send" title="Send (Enter)">↑</button><button id="stop" class="send stop" title="Stop (Esc)">■</button></div>
-    <div class="foot"><span>local · approvals ask first</span><span id="foot-stats"></span></div>
+      <button id="send" class="send" title="Send (Enter)" aria-label="Send">↑</button><button id="stop" class="send stop" title="Stop (Esc)" aria-label="Stop">■</button></div>
+    <div class="foot"><span id="foot-mode">local · approvals ask first</span><span id="foot-stats"></span></div>
   </div>
 </section>
 
@@ -65,11 +67,22 @@
       <textarea id="vfEdit" class="vedit" spellcheck="false" hidden></textarea></div>
   </div>
 </section>
+
+<section id="view-terminal" class="view">
+  <div class="tbar"><div id="termTabs" class="ttabs"></div><button id="termFail" class="btn" hidden></button><span class="muted small thint">real shell in the workspace · Ctrl+Shift+C/V copy and paste</span></div>
+  <div id="termHost" class="thost"></div>
+</section>
+
+<section id="view-activity" class="view">
+  <div class="pane act"><div class="label">03 // ACTIVITY</div>
+    <div class="muted small" style="margin-bottom:10px">Everything Kage changed on your machine. Undo restores files from a snapshot, deletes only what Kage created, and refuses if you edited something since.</div>
+    <div id="actList"></div></div>
+</section>
 </main>
 
 <div id="picker" class="overlay" hidden>
   <div class="sheet">
-    <div class="sheet-head"><div><div class="label">00 // WORKSPACE</div><h2>Where should Kage work?</h2></div><button class="x" id="pkClose" title="Close (Esc)">ESC ✕</button></div>
+    <div class="sheet-head"><div><div class="label">00 // WORKSPACE</div><h2>Where should Kage work?</h2></div><button class="x" id="pkClose" title="Close (Esc)" aria-label="Close workspace picker">ESC ✕</button></div>
     <div class="pk-grid">
       <aside class="pk-side" id="pkSide"></aside>
       <section class="pk-main">
@@ -82,4 +95,5 @@
   </div>
 </div>
 <script src="/static/app.js"></script>
+<script src="/static/term.js"></script>
 </body></html>

@@ -113,7 +113,7 @@ class GitMixin:
         todo = {k: v for k, v in want.items() if cur[k] != v}
         summary = '\n'.join(f'  {k} = {self._gcfg(k, cwd)}' for k in want)
         if not todo: return f'VERIFIED: git was already configured; nothing changed.\n{summary}'
-        if not self.confirm('Set global git config (~/.gitconfig):\n' + '\n'.join(f'  {k}: {cur[k] or "(unset)"} -> {v}' for k, v in todo.items()), trustable=True):
+        if not self.confirm('Set global git config (~/.gitconfig):\n' + '\n'.join(f'  {k}: {cur[k] or "(unset)"} -> {v}' for k, v in todo.items())):
             return 'Cancelled. Nothing was changed.'
         for k, v in todo.items():
             code, out = self._git(['config', '--global', k, v], cwd)
@@ -128,6 +128,11 @@ class GitMixin:
         if not command or len(command) > 4000: raise AgentError('Provide the command or script to run in the terminal.')
         level, why = shell.classify(command)
         if level == 'deny': raise AgentError(f'Blocked: {why}.')
+        missing = self._precheck(command)
+        if missing: return 'FAILED (exit 127)\n' + missing
+        if self.terminal_handler:       # web view tab or the terminal agent itself: no external window needed
+            if not self.confirm(f'Open an interactive terminal and run:\n$ {command}', danger=level == 'danger'): return 'Cancelled. Nothing was opened.'
+            return self.terminal_handler(command, str(title)[:60])
         argv, term = shell.terminal_argv(command, str(title)[:60])
         if not argv: raise AgentError('No terminal emulator found. Set $TERMINAL or install kitty, foot, alacritty or xterm.')
         if not self.confirm(f'Open a {term} window and run:\n$ {command}', danger=level == 'danger'): return 'Cancelled. Nothing was opened.'
@@ -154,7 +159,7 @@ class GitMixin:
             note = ('It creates ~/.ssh/id_ed25519 if missing and uploads it to GitHub. Tip for the Boss: leave the passphrase empty or load the key into an ssh-agent '
                     'that Kage can see, otherwise pushes cannot unlock it.')
         res = self.tool_open_terminal(script, title='Kage · GitHub sign-in')
-        return res + '\n' + note + '\nWhen the Boss says they are done, call github_status() and report what it shows.' if res.startswith('OPENED') else res
+        return res + '\n' + note + '\nWhen the Boss says they are done, call github_status() and report what it shows.' if res.startswith(('OPENED', 'OK (exit')) else res
 
     def tool_git_remote(self, url, name='origin', path='.'):
         d, top = self._repo(path); url = str(url or '').strip(); name = str(name or 'origin').strip()
@@ -165,7 +170,7 @@ class GitMixin:
         if c == 0 and cur.strip() == url: msg = f'Remote {name} already points to {url}.'
         else:
             verb = 'set-url' if c == 0 else 'add'
-            if not self.confirm(f'{"Change" if c == 0 else "Add"} remote {name} in {top}:\n' + (f'  {shell.redact(cur)} ->\n' if c == 0 else '') + f'  {url}', trustable=True): return 'Cancelled. Nothing was changed.'
+            if not self.confirm(f'{"Change" if c == 0 else "Add"} remote {name} in {top}:\n' + (f'  {shell.redact(cur)} ->\n' if c == 0 else '') + f'  {url}'): return 'Cancelled. Nothing was changed.'
             c2, out = self._git(['remote', verb, name, url], d)
             if c2: raise AgentError(out)
             msg = f'Remote {name} set to {url}.'
@@ -227,7 +232,7 @@ class GitMixin:
         if secret: raise AgentError('Refusing to commit files that look like secrets: ' + ', '.join(secret[:8]) + '. Add them to .gitignore (git(args="rm --cached <file>") if already tracked) or tell the Boss. Nothing was staged.')
         if heavy: raise AgentError('These look like dependencies or caches and should not be committed: ' + ', '.join(heavy[:6]) + '. Add them to .gitignore first (write_file), then retry.')
         listing = '\n'.join(f'  {xy} {p}' for xy, p in changes[:25]) + (f'\n  …and {len(changes) - 25} more' if len(changes) > 25 else '')
-        if not self.confirm(f'Commit {len(files)} file(s) in {top}\nMessage: {message}\nAs: {n} <{e}>\n{listing}', trustable=True): return 'Cancelled. Nothing was committed.'
+        if not self.confirm(f'Commit {len(files)} file(s) in {top}\nMessage: {message}\nAs: {n} <{e}>\n{listing}'): return 'Cancelled. Nothing was committed.'
         before = self._git(['rev-parse', '-q', '--verify', 'HEAD'], d)[1]
         if add_all:
             c, o = self._git(['add', '-A'], d)
@@ -238,6 +243,7 @@ class GitMixin:
         if not after or after == before: return 'NOT VERIFIED: git reported success but HEAD did not move.\n' + o
         subj = self._git(['log', '-1', '--format=%h %s'], d)[1]
         left = len(self._changes(d))
+        self._log('git_commit', f'Committed {subj} in {top}', {'kind': 'git_reset', 'repo': str(top), 'sha': after, 'root': not before})
         return f'VERIFIED: committed {subj} ({len(files)} file(s)). Uncommitted files left: {left}.'
 
     def tool_git_push(self, remote='origin', branch='', force=False, path='.'):
@@ -257,7 +263,7 @@ class GitMixin:
             return f'Nothing to push: {remote}/{branch} already has every commit. (OK, not an error.)'
         card = f'Push branch "{branch}" to {remote} ({shell.redact(url)})' + (' with --force-with-lease' if force else '') + f'\nCommits going out:\n{log or "(none listed)"}'
         if dirty: card += f'\nNote: {dirty} uncommitted file(s) will NOT be pushed.'
-        if not self.confirm(card, danger=force, trustable=not force): return 'Cancelled. Nothing was pushed.'
+        if not self.confirm(card, danger=force): return 'Cancelled. Nothing was pushed.'
         args = ['push'] + (['--force-with-lease'] if force else []) + ['--set-upstream', remote, branch]
         code, out = self._git(args, d, timeout=300)
         if code: return shell.fmt(code, out)
@@ -281,6 +287,6 @@ class GitMixin:
         if not d.is_dir(): raise AgentError(f'Not a folder: {d}')
         line = 'git ' + shlex.join(toks); level, why = shell.classify(line)
         if level == 'deny': raise AgentError(f'Blocked: {why}.')
-        if level != 'readonly' and not self.confirm(f'git in {d}:\n$ {line}' + (f'\n({why})' if why else ''), danger=level == 'danger', trustable=True): return 'Cancelled. Nothing was run.'
+        if level != 'readonly' and not self.confirm(f'git in {d}:\n$ {line}' + (f'\n({why})' if why else ''), danger=level == 'danger'): return 'Cancelled. Nothing was run.'
         code, out = shell.execute(['git', *toks], cwd=d, timeout=max(5, min(int(timeout), 900)), on_poll=self._poll)
         return shell.fmt(code, out)

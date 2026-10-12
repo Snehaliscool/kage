@@ -15,3 +15,5 @@ Order of operations to push code to GitHub:
 Rules: never force-push unless the Boss explicitly asks. Never put a token in a URL. Never claim success without a VERIFIED result from this turn. Prefer git_commit / git_push over run_command for git, they check their own work.
 
 Common failures (each comes with a HINT): rejected non-fast-forward -> `git(args="pull --rebase")` then push; GH007 private email -> use the noreply address; Permission denied (publickey) -> github_login(method="ssh") or switch the remote to https; protected branch -> push a feature branch.
+
+Surveying repos ("check all my repos and tell me what they do"): `github_repos()` lists them, then `github_describe_repos()` reads each README and returns a one-line summary per repo, 10 per call. Keep calling it with the `offset` it prints until it says "That is all", then answer from the COMPLETE LIST. Works signed in (private repos too) or, with `owner="name"`, on public repos.
