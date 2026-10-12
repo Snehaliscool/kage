@@ -103,8 +103,11 @@ async function loadState() {
   const auto = $('#autoBtn'); auto.classList.toggle('on', !!S.auto_approve); $('b', auto).textContent = S.auto_approve ? 'ON' : 'OFF';
   document.body.classList.toggle('auto-on', !!S.auto_approve);
   $('#foot-mode').textContent = S.auto_approve ? 'auto-approve on · HIGH RISK and folder access still ask' : 'local · approvals ask first';
+<<<<<<< HEAD
   const vit = [[ix.files != null ? ix.files.toLocaleString() : '—', 'files indexed'], [ix.symbols != null ? ix.symbols.toLocaleString() : '—', 'symbols'], [(S.skills || []).length, 'skills'], [S.search.ok ? 'online' : 'off', 'web search']];
   $('#vitals').innerHTML = vit.map(([v, l]) => `<div class="vital"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
+=======
+>>>>>>> 158ea11149477d0caafca054455659b5808e6343
   if (S.index && S.index.building) setTimeout(loadState, 1200);
 }
 $('#autoBtn').onclick = async () => { try { await api('/api/settings', { method: 'POST', body: { auto_approve: !S.auto_approve } }) } catch { } loadState() };
