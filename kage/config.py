@@ -22,6 +22,7 @@ DEFAULTS = {
     'system_access': False,
     'num_ctx': 8192,
     'keep_alive': '30m',
+    'auto_approve': False,      # approve every card except HIGH RISK and folder-scope grants (persisted)
     'habits_history': True,   # mine shell history for command counts (never leaves the machine)
     'theme': 'ink',
 }

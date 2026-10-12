@@ -3,7 +3,7 @@
 from __future__ import annotations
 import json, sys
 from pathlib import Path
-from . import APP, VERSION
+from . import APP, VERSION, projscan
 from .index import Index
 from .knowledge import Knowledge
 from .vault import Vault
@@ -22,6 +22,8 @@ TOOLS = {
     'wip': S('Uncommitted work, TODO/FIXME markers and their blast radius.'),
     'changed': S('Map git changes to the files they could affect.'),
     'doctor': S('Structural health: cycles, dangling references, fan-in risk.'),
+    'describe_project': S('Scan the workspace in milliseconds: stack, languages, layout, entry points, key files, one-line purpose of each. No model needed.'),
+    'describe_files': S('One-line purpose of every file in a folder (from its docstring / comment / heading).', path='folder relative to the workspace, e.g. src or .'),
     'recall': S('Read durable memory.', query='optional filter'),
     'remember': S('Save a durable fact to memory.', note='the fact'),
     'notes': S('List reviewed knowledge notes and their health.'),
@@ -34,6 +36,13 @@ def serve(workspace: str):
     def call(name, args):
         a = next(iter(args.values()), '') if args else ''
         if name in IX: return ix.run(IX[name], str(a))['text']
+        if name == 'describe_project': return projscan.render(projscan.scan(ws))
+        if name == 'describe_files':
+            base = (ws / str(a or '.')).resolve()
+            if base != ws and ws not in base.parents: raise ValueError('path must stay inside the workspace')
+            if not base.is_dir(): raise ValueError(f'not a folder: {a}')
+            rows, total = projscan.list_dir(ws, base, '', False, 120)
+            return f'{base.name or base} ({len(rows)} of {total})\n' + '\n'.join(f"{r['path']}" + (f" ({r['lines']} lines)" if r['lines'] else '') + f": {r['desc']}" for r in rows)
         if name == 'recall': return vault.memory_read(str(a))
         if name == 'remember': return vault.memory_add(str(a))
         if name == 'notes': return kn.list() + '\n' + kn.lint()

@@ -36,7 +36,7 @@ def places() -> list:
         if p.is_dir() and str(p) not in [x['path'] for x in out]:
             out.append({'label': label, 'path': str(p), 'icon': label[0]})
     cfg_dir = h / '.config'
-    if cfg_dir.is_dir(): out.append({'label': '.config', 'path': str(cfg_dir), 'icon': '⚙'})
+    if cfg_dir.is_dir(): out.append({'label': '.config', 'path': str(cfg_dir), 'icon': '◦'})
     return out
 
 _repo_cache = {'t': 0, 'v': []}

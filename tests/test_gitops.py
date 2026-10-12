@@ -64,8 +64,8 @@ class Flow(unittest.TestCase):
         self.assertTrue(r.startswith('FAILED'), r); self.assertIn('pull --rebase', r)
     def test_force_push_and_dangerous_commands_are_flagged(self):
         a = self.a; a.tool_git_setup('B', 'b@example.com'); a.tool_git('init -b main'); a.tool_git_remote(str(self.remote)); (self.ws / 'a').write_text('1'); a.tool_git_commit('c')
-        a.tool_git_push(force=True); self.assertTrue(self.cards[-1].startswith('⚠ HIGH RISK'))
-        self.cards.clear(); a.tool_run_command('git reset --hard HEAD'); self.assertTrue(self.cards[-1].startswith('⚠ HIGH RISK'))
+        a.tool_git_push(force=True); self.assertTrue(self.cards[-1].startswith('HIGH RISK'))
+        self.cards.clear(); a.tool_run_command('git reset --hard HEAD'); self.assertTrue(self.cards[-1].startswith('HIGH RISK'))
     def test_run_command_policy(self):
         a = self.a
         self.assertTrue(a.tool_run_command('echo hi').startswith('OK')); self.assertEqual(self.cards, [])      # read-only: no card
